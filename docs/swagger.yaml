@@ -1,0 +1,156 @@
+definitions:
+  models.APIResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+      status_code:
+        type: integer
+    type: object
+  models.BadRequestAPIResponse:
+    properties:
+      message:
+        type: string
+      statusCode:
+        type: integer
+    type: object
+  models.InternalErrorAPIResponse:
+    properties:
+      message:
+        example: Internal Error
+        type: string
+      statusCode:
+        type: integer
+    type: object
+  models.SuccessAPIResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+      statusCode:
+        type: integer
+    type: object
+  models.TransactionRequest:
+    properties:
+      amount:
+        type: number
+      country_id:
+        type: integer
+      currency:
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/models.TransactionType'
+        description: '"deposit" or "withdrawal"'
+      user_id:
+        type: integer
+    type: object
+  models.TransactionStatus:
+    enum:
+    - INIT
+    - KAFKA_PUBLISH_FAILED
+    - PENDING
+    - SUCCESS
+    - FAILED
+    type: string
+    x-enum-varnames:
+    - INIT
+    - KAFKA_PUBLISH_FAILED
+    - PENDING
+    - SUCCESS
+    - FAILED
+  models.TransactionType:
+    enum:
+    - DEPOSIT
+    - WITHDRAWAL
+    type: string
+    x-enum-varnames:
+    - DEPOSIT
+    - WITHDRAWAL
+  models.TransactionWebhookResponse:
+    properties:
+      status:
+        $ref: '#/definitions/models.TransactionStatus'
+      txn_id:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /api/v1/payments/{operation}:
+    post:
+      consumes:
+      - application/json
+      - text/xml
+      description: Initializes a transaction in a pending state for either deposit
+        or withdrawal.
+      parameters:
+      - description: 'Transaction type: ''DEPOSIT'' or ''WITHDRAWAL'''
+        enum:
+        - DEPOSIT
+        - WITHDRAWAL
+        in: path
+        name: operation
+        required: true
+        type: string
+      - description: Transaction request payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.TransactionRequest'
+      produces:
+      - application/json
+      - text/xml
+      responses:
+        "200":
+          description: Transaction processing initialized successfully
+          schema:
+            $ref: '#/definitions/models.SuccessAPIResponse'
+        "400":
+          description: Invalid request body or operation
+          schema:
+            $ref: '#/definitions/models.BadRequestAPIResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/models.InternalErrorAPIResponse'
+      summary: Create a deposit or withdrawal transaction
+      tags:
+      - Payments
+  /api/v1/webhooks:
+    post:
+      consumes:
+      - application/json
+      - text/xml
+      description: Processes webhook responses to update the status of transactions
+        based on the gateway's response.
+      parameters:
+      - description: Webhook response payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.TransactionWebhookResponse'
+      produces:
+      - application/json
+      - text/xml
+      responses:
+        "200":
+          description: Webhook processing completed successfully
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      summary: Process webhook updates
+      tags:
+      - Webhooks
+swagger: "2.0"

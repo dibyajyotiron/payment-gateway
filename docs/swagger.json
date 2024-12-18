@@ -1,0 +1,231 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "contact": {}
+    },
+    "paths": {
+        "/api/v1/payments/{operation}": {
+            "post": {
+                "description": "Initializes a transaction in a pending state for either deposit or withdrawal.",
+                "consumes": [
+                    "application/json",
+                    "text/xml"
+                ],
+                "produces": [
+                    "application/json",
+                    "text/xml"
+                ],
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Create a deposit or withdrawal transaction",
+                "parameters": [
+                    {
+                        "enum": [
+                            "DEPOSIT",
+                            "WITHDRAWAL"
+                        ],
+                        "type": "string",
+                        "description": "Transaction type: 'DEPOSIT' or 'WITHDRAWAL'",
+                        "name": "operation",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Transaction request payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.TransactionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Transaction processing initialized successfully",
+                        "schema": {
+                            "$ref": "#/definitions/models.SuccessAPIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or operation",
+                        "schema": {
+                            "$ref": "#/definitions/models.BadRequestAPIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/models.InternalErrorAPIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/webhooks": {
+            "post": {
+                "description": "Processes webhook responses to update the status of transactions based on the gateway's response.",
+                "consumes": [
+                    "application/json",
+                    "text/xml"
+                ],
+                "produces": [
+                    "application/json",
+                    "text/xml"
+                ],
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Process webhook updates",
+                "parameters": [
+                    {
+                        "description": "Webhook response payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.TransactionWebhookResponse"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Webhook processing completed successfully",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "models.APIResponse": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "message": {
+                    "type": "string"
+                },
+                "status_code": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.BadRequestAPIResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "statusCode": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.InternalErrorAPIResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Internal Error"
+                },
+                "statusCode": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.SuccessAPIResponse": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "message": {
+                    "type": "string"
+                },
+                "statusCode": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.TransactionRequest": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "country_id": {
+                    "type": "integer"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "type": {
+                    "description": "\"deposit\" or \"withdrawal\"",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.TransactionType"
+                        }
+                    ]
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.TransactionStatus": {
+            "type": "string",
+            "enum": [
+                "INIT",
+                "KAFKA_PUBLISH_FAILED",
+                "PENDING",
+                "SUCCESS",
+                "FAILED"
+            ],
+            "x-enum-varnames": [
+                "INIT",
+                "KAFKA_PUBLISH_FAILED",
+                "PENDING",
+                "SUCCESS",
+                "FAILED"
+            ]
+        },
+        "models.TransactionType": {
+            "type": "string",
+            "enum": [
+                "DEPOSIT",
+                "WITHDRAWAL"
+            ],
+            "x-enum-varnames": [
+                "DEPOSIT",
+                "WITHDRAWAL"
+            ]
+        },
+        "models.TransactionWebhookResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "$ref": "#/definitions/models.TransactionStatus"
+                },
+                "txn_id": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
